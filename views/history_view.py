@@ -1,0 +1,2 @@
+class HistoryView:
+    pass

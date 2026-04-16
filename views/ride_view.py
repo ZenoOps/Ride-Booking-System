@@ -1,0 +1,2 @@
+class RideView:
+    pass
