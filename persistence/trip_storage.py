@@ -1,5 +1,5 @@
 import os
-from utils.exceptions import FileHandlingException
+from utils.exceptions import FileHandlingException, InvalidInputException
 from models.trip import Trip
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +16,27 @@ class TripStorage:
         except FileHandlingException as e:
             raise e
 
+    def edit_trip(self, trip_id):
+        try:
+            found = False
+            with open(self.file_path, "r") as file:
+                lines = file.readlines()
+
+            with open(self.file_path, "w") as file:
+                for line in lines:
+                    data = line.strip().split(", ")
+                    if data[0] == trip_id:
+                        file.write(f"{data[0]}, {data[1]}, {data[2]}, {data[3]}, {data[4]}, {data[5]}, Completed\n")
+                        found = True
+                        return Trip(trip_id=data[0], driver=data[1], rider=data[2], car=data[3], start_point=data[4], destination=data[5], status= 'Completed')
+                    else:
+                        file.write(line)
+
+            if not found:
+                raise InvalidInputException("ID is not correct")
+
+        except FileHandlingException as e:
+            raise e
 
     def get_all_trip(self):
         try:
