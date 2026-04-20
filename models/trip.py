@@ -4,14 +4,14 @@ from models.car import Car
 from utils.uuid_generators import UuidGenerator
 
 class Trip:
-    def __init__(self, trip_id, driver: Driver, rider: Rider, car: Car, start_point, destination, status):
+    def __init__(self, driver: Driver, rider: Rider, car: Car, start_point, destination, trip_id = None, status = None):
         self.__trip_id = trip_id or UuidGenerator.generate_trip_uuid()
         self.__driver = driver
         self.__rider = rider
         self.__car = car
         self.__start_point = start_point
         self.__destination = destination
-        self.__status = status or "Created"
+        self.__status = status or "In Process"
 
     # trip_id
     @property
