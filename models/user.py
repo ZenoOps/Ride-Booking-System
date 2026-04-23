@@ -1,17 +1,13 @@
 class User:
-    def __init__(self, user_id, name, type):
+    def __init__(self, user_id, name, user_type):
         self.__user_id = user_id
         self.__name = name
-        self.__type = type
+        self.__user_type = user_type
 
     # user_id
     @property
     def user_id(self):
         return self.__user_id
-
-    @user_id.setter
-    def user_id(self, new_user_id):
-        self.__user_id = new_user_id
 
     # name
     @property
@@ -21,3 +17,8 @@ class User:
     @name.setter
     def name(self, name):
         self.__name = name
+
+    # user type
+    @property
+    def user_type(self):
+        return self.__user_type
