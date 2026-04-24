@@ -4,7 +4,7 @@ from models.car import Car
 from utils.uuid_generators import UuidGenerator
 
 class Trip:
-    def __init__(self, driver: Driver, rider: Rider, car: Car, start_point, destination, trip_id = None, status = None):
+    def __init__(self, driver, rider, car, start_point, destination, trip_id = None, status = None):
         self.__trip_id = trip_id or UuidGenerator.generate_trip_uuid()
         self.__driver = driver
         self.__rider = rider
