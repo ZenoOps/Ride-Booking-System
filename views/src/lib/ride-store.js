@@ -1,42 +1,19 @@
 // Simple in-memory ride store with pub/sub for the demo.
 // All state lives in module scope; persists across route changes during the session.
 
-export type Driver = {
-  id: string;
-  name: string;
-  car: string;
-  plate: string;
-  rating: number;
-  eta: number; // minutes
-  avatar: string;
-};
+import { useSyncExternalStore } from "react";
 
-export type RideStatus = "idle" | "searching" | "assigned" | "started" | "completed" | "cancelled";
-
-export type Ride = {
-  id: string;
-  pickup: string;
-  dropoff: string;
-  rideType: "Standard" | "Comfort" | "XL";
-  fare: number;
-  driver: Driver | null;
-  status: RideStatus;
-  bookedAt: number;
-  startedAt?: number;
-  completedAt?: number;
-};
-
-const DRIVERS: Driver[] = [
+const DRIVERS = [
   { id: "d1", name: "Aarav Sharma", car: "Toyota Prius", plate: "MH 12 AB 4421", rating: 4.9, eta: 3, avatar: "🧑‍✈️" },
   { id: "d2", name: "Maya Patel", car: "Honda City", plate: "DL 8C XY 7782", rating: 4.8, eta: 5, avatar: "👩‍✈️" },
   { id: "d3", name: "Liam Chen", car: "Hyundai Verna", plate: "KA 03 PQ 1190", rating: 4.95, eta: 2, avatar: "🧔" },
   { id: "d4", name: "Sofia Reyes", car: "Kia Seltos", plate: "TN 22 RS 5567", rating: 4.7, eta: 6, avatar: "👩" },
 ];
 
-const FARES: Record<Ride["rideType"], number> = { Standard: 180, Comfort: 260, XL: 340 };
+const FARES = { Standard: 180, Comfort: 260, XL: 340 };
 
-let currentRide: Ride | null = null;
-let history: Ride[] = [
+let currentRide = null;
+let history = [
   {
     id: "r-001",
     pickup: "Indiranagar",
@@ -63,20 +40,20 @@ let history: Ride[] = [
   },
 ];
 
-const listeners = new Set<() => void>();
+const listeners = new Set();
 const emit = () => listeners.forEach((l) => l());
 
 export const rideStore = {
-  subscribe(cb: () => void) {
+  subscribe(cb) {
     listeners.add(cb);
     return () => listeners.delete(cb);
   },
   getCurrent: () => currentRide,
   getHistory: () => history,
   getDrivers: () => DRIVERS,
-  getFare: (type: Ride["rideType"]) => FARES[type],
+  getFare: (type) => FARES[type],
 
-  bookRide(pickup: string, dropoff: string, rideType: Ride["rideType"]) {
+  bookRide(pickup, dropoff, rideType) {
     currentRide = {
       id: `r-${Date.now().toString().slice(-6)}`,
       pickup,
@@ -88,7 +65,6 @@ export const rideStore = {
       bookedAt: Date.now(),
     };
     emit();
-    // Simulate driver assignment
     setTimeout(() => {
       if (currentRide && currentRide.status === "searching") {
         currentRide = {
@@ -118,7 +94,7 @@ export const rideStore = {
 
   cancel() {
     if (currentRide && (currentRide.status === "searching" || currentRide.status === "assigned")) {
-      const cancelled = { ...currentRide, status: "cancelled" as const, completedAt: Date.now() };
+      const cancelled = { ...currentRide, status: "cancelled", completedAt: Date.now() };
       history = [cancelled, ...history];
       currentRide = null;
       emit();
@@ -130,8 +106,6 @@ export const rideStore = {
     emit();
   },
 };
-
-import { useSyncExternalStore } from "react";
 
 export function useRideStore() {
   const current = useSyncExternalStore(
