@@ -6,16 +6,16 @@ class TripController:
     def __init__(self, storage=None):
         self.__trip_storage = storage or TripStorage()
 
-    def start_trip(self, driver, rider, car, start_point, destination):
+    def start_trip(self, driver, rider, car, start_point, destination) -> Trip:
         trip_obj = Trip(driver, rider, car, start_point, destination)
         res = self.__trip_storage.create_trip(trip_obj)
         return res
 
-    def end_trip(self, trip_id):
+    def end_trip(self, trip_id) -> Trip:
         res = self.__trip_storage.edit_trip(trip_id)
         return res
 
-    def get_trip_detail(self, trip_id):
+    def get_trip_detail(self, trip_id) -> dict:
             # The step that checks whether the trip ID has provided and if not throws an error
             if not trip_id:
                 raise TripNotFoundException("Trip cannot be empty")
@@ -38,4 +38,3 @@ class TripController:
 
     def get_trips_by_user(self, user_id: str, user_type: str) -> list:
         return self.__trip_storage.get_all_trip(user_id, user_type)
-
