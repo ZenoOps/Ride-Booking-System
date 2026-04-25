@@ -1,6 +1,6 @@
 import hashlib
 import os
-from utils.exceptions import FileHandlingException
+from utils.exceptions import FileHandlingException, InvalidInputException
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 

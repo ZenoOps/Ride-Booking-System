@@ -14,9 +14,13 @@ class UserController:
             return "Ride request failed. Rider is not registered."
         return f"Ride requested successfully by {rider.name}."
 
+    def change_driver_location(self, driver_id, new_location = None):
+        res = self.__user_storage.edit_driver(user_id=driver_id, current_location = new_location)
+        return res
+
 user_controller = UserController()
-try:
-    rider = user_controller.get_riders()[15]
-    print(user_controller.request_ride(rider))
-except IndexError:
-    print("No riders found.")
+# try:
+#     rider = user_controller.get_riders()[15]
+#     print(user_controller.request_ride(rider))
+# except IndexError:
+#     print("No riders found.")

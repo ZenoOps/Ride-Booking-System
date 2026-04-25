@@ -1,6 +1,6 @@
 # data persistence layer for user ( file handling methods)
 import os
-from utils.exceptions import FileHandlingException
+from utils.exceptions import FileHandlingException, InvalidInputException
 from models.rider import Rider
 from models.driver import Driver
 
@@ -50,3 +50,28 @@ class UserStorage:
                     f.write(f"{driver.user_id},{driver.name},{driver.available_status}\n")
         except (OSError, IOError) as e:
             raise FileHandlingException(f"Error saving drivers: {e}")
+
+    def edit_driver(self, user_id, available_status = None, current_location = None):
+        try:
+            found = False
+            result = None
+            with open(self.driver_path, "r", encoding="utf-8") as f:
+                lines = f.readlines()
+            with open(self.driver_path, "w", encoding="utf-8") as f:
+                for line in lines:
+                    if not line.strip():
+                        continue
+                    data = line.strip().split(", ")
+                    if data[0] == user_id:
+                        available_status = available_status if available_status else data[4]
+                        current_location = current_location if current_location else data[5]
+                        f.write(f"{data[0]}, {data[1]}, {data[2]}, {data[3]}, {available_status}, {current_location}, {data[6]}\n")
+                        found = True
+                        result = Driver(user_id=data[0], name=data[1], available_status=available_status, current_location=current_location, plate_number=data[6])
+                    else:
+                        f.write(line)
+                if not found:
+                    raise InvalidInputException("Driver ID is not correct")
+                return result
+        except (OSError, IOError) as e:
+            raise FileHandlingException(f"Error editing driver: {e}")
