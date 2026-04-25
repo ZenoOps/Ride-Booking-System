@@ -51,3 +51,27 @@ class TripStorage:
             return trips
         except FileHandlingException as e:
             raise e
+
+    def get_trip_by_id(self, trip_id):
+
+        # Reading the data from the trip.txt
+        try:
+            with open(self.file_path, "r") as file:
+                lines = file.readlines()
+                for line in lines:
+                    data = line.strip().split(", ")
+                
+                    if data[0] == trip_id:
+                        return Trip(
+                            trip_id=data[0], 
+                            driver=data[1], 
+                            rider=data[2], 
+                            car=data[3], 
+                            start_point=data[4], 
+                            destination=data[5], 
+                            status=data[6]
+                        )
+            return None 
+
+        except Exception:
+            raise FileHandlingException(f"File not found: {self.file_path}") from None

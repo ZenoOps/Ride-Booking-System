@@ -10,3 +10,6 @@ class DuplicateUserException(Exception):
 
 class FileHandlingException(Exception):
     pass
+
+class TripNotFoundException(Exception):
+    pass
