@@ -4,6 +4,8 @@ class User:
         self.__name = name
         self.__user_type = user_type
 
+    # Password Field
+
     # user_id
     @property
     def user_id(self):

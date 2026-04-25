@@ -34,7 +34,6 @@ class TripStorage:
                         result = Trip(trip_id=data[0], driver=data[1], rider=data[2], car=data[3], start_point=data[4], destination=data[5], status='Completed')
                     else:
                         file.write(line)
-
             if not found:
                 raise InvalidInputException("ID is not correct")
             return result
