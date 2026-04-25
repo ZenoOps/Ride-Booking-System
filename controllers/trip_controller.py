@@ -3,15 +3,11 @@ from models.trip import Trip
 from utils.exceptions import TripNotFoundException
 
 class TripController:
-    def __init__(self):
-        self.__trip_storage = TripStorage()
+    def __init__(self, storage=None):
+        self.__trip_storage = storage or TripStorage()
 
-    def get_all_trip(self):
-        trip_list = self.__trip_storage.get_all_trip()
-        return trip_list
-
-    def start_trip(self, driver_id, rider_id, car_id, start_point, destination):
-        trip_obj = Trip(driver_id, rider_id, car_id, start_point, destination)
+    def start_trip(self, driver, rider, car, start_point, destination):
+        trip_obj = Trip(driver, rider, car, start_point, destination)
         res = self.__trip_storage.create_trip(trip_obj)
         return res
 
@@ -39,11 +35,7 @@ class TripController:
                 "destination": trip.destination,
                 "status": trip.status
             }
-            
-tr = TripController()
-# trips = tr.get_all_trip()
-# for t in trips:
-#     print(t.trip_id)
-# create_tr = tr.start_trip(1010,2020,303,"Bkk","ChiangMai")
-# print(create_tr.trip_id)
-# edit_tr = tr.end_trip("a70e93d4-e210-45d4-8c75-189c828b61c")
+
+    def get_trips_by_user(self, user_id: str, user_type: str) -> list:
+        return self.__trip_storage.get_all_trip(user_id, user_type)
+

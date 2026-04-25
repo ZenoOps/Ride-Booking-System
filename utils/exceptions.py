@@ -13,3 +13,6 @@ class FileHandlingException(Exception):
 
 class TripNotFoundException(Exception):
     pass
+  
+class InvalidCredentialsException(Exception):
+    pass
