@@ -16,7 +16,7 @@ class UserStorage:
             riders = []
             with open(self.rider_path, "r", encoding="utf-8") as f:
                 for line in f:
-                    data = line.strip().split(",")
+                    data = line.strip().split(", ")
                     rider = Rider(user_id=data[0], name=data[1])
                     riders.append(rider)
             return riders
@@ -27,7 +27,7 @@ class UserStorage:
         try:
             with open(self.rider_path, "w", encoding="utf-8") as f:
                 for rider in riders:
-                    f.write(f"{rider.user_id},{rider.name}\n")
+                    f.write(f"{rider.user_id}, {rider.name}\n")
         except (OSError, IOError) as e:
             raise FileHandlingException(f"Error saving riders: {e}")
 
@@ -36,18 +36,21 @@ class UserStorage:
             drivers = []
             with open(self.driver_path, "r", encoding="utf-8") as f:
                 for line in f:
-                    data = line.strip().split(",")
-                    driver = Driver(user_id=data[0], name=data[1], available_status=data[2])
+                    data = line.strip().split(", ")
+                    driver = Driver(user_id=data[0], name=data[1], available_status=data[2], current_location=data[5], plate_number=data[6],)
                     drivers.append(driver)
             return drivers
         except (OSError, IOError) as e:
             raise FileHandlingException(f"Error loading drivers: {e}")
 
-    def save_drivers(self, drivers: list[Driver]):
+    def get_drivers(self):
+        return self.load_drivers()  # hits the file every time it's called
+
+    def save_drivers(self, drivers: list):
         try:
             with open(self.driver_path, "w", encoding="utf-8") as f:
                 for driver in drivers:
-                    f.write(f"{driver.user_id},{driver.name},{driver.available_status}\n")
+                    f.write(f"{driver.user_id}, {driver.name}, {driver.available_status}, {driver.current_location}, {driver.plate_number}")
         except (OSError, IOError) as e:
             raise FileHandlingException(f"Error saving drivers: {e}")
 
