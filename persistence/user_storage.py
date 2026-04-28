@@ -37,7 +37,7 @@ class UserStorage:
             with open(self.driver_path, "r", encoding="utf-8") as f:
                 for line in f:
                     data = line.strip().split(", ")
-                    driver = Driver(user_id=data[0], name=data[1], available_status=data[2], current_location=data[5], plate_number=data[6],)
+                    driver = Driver(user_id=data[0], name=data[1], available_status=data[4], current_location=data[5], plate_number=data[6],)
                     drivers.append(driver)
             return drivers
         except (OSError, IOError) as e:
