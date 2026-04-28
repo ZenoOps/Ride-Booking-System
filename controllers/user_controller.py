@@ -1,4 +1,5 @@
 from persistence.user_storage import UserStorage
+from utils.exceptions import FileHandlingException
 
 class UserController:
     def __init__(self):
@@ -74,8 +75,45 @@ class UserController:
         res = self.__user_storage.edit_driver(user_id=driver_id, available_status = new_status)
         return res
 
+    def get_user_detail(self, user_id):
+        """
+        Searches for a user by ID in both the Rider and Driver databases
+        and returns a clean dictionary.
+        """
+        try:
+            riders = self.__user_storage.load_riders()
+            drivers = self.__user_storage.load_drivers()
+            # Convert ID to string once, just in case an int was passed in
+            target_id = str(user_id)
+
+            for rider in riders:
+                if rider.user_id == target_id:
+                    return {
+                        "success": True,
+                        "user_id": rider.user_id,
+                        "name": rider.name,
+                        "user_type": rider.user_type  
+                    }
+
+            for driver in drivers:
+                if driver.user_id == target_id:
+                    return {
+                        "success": True,
+                        "user_id": driver.user_id,
+                        "name": driver.name,
+                        "user_type": driver.user_type, 
+                        "available_status": driver.available_status
+                    }
+
+            return {"success": False, "message": "User not found."}
+
+        except FileHandlingException as e:
+            return {"success": False, "message": f"Database error: {str(e)}"}
+        except Exception as e:
+            return {"success": False, "message": "An unexpected system error occurred."}
+
 #Testing
-user_controller = UserController()
+# user_controller = UserController()
 
 #get riders and drivers
 # riders = user_controller.get_riders()
@@ -91,26 +129,31 @@ user_controller = UserController()
 #     print("No rider found.")
 
 #request, find and accept
-try:
-    r = user_controller.get_riders()[0]
-    print("Rider:", r.user_id, r.name)
+# try:
+#     r = user_controller.get_riders()[0]
+#     print("Rider:", r.user_id, r.name)
 
-    print("\n=== Request Ride ===")
-    request_data, message = user_controller.request_ride(r.name, "Bang Sue", "B")
-    print(message)
-    print(request_data)
+#     print("\n=== Request Ride ===")
+#     request_data, message = user_controller.request_ride(r.name, "Bang Sue", "B")
+#     print(message)
+#     print(request_data)
 
-    print("\n=== Find Driver ===")
-    found_driver, d_message = user_controller.find_driver("Bang Sue")
-    print(d_message)
 
-    if found_driver is not None:
-        print("\n=== Accept Ride ===")
-        accepted_request, a_message = user_controller.accept_ride(request_data, found_driver)
-        print(a_message)
-        print(accepted_request)
-    else:
-        print("Ride cannot be accepted because no driver was found.")
+#     print("\n=== Find Driver ===")
+#     found_driver, d_message = user_controller.find_driver("Bang Sue")
+#     print(d_message)
 
-except IndexError:
-    print("No riders found.")
+#     if found_driver is not None:
+#         print("\n=== Accept Ride ===")
+#         accepted_request, a_message = user_controller.accept_ride(request_data, found_driver)
+#         print(a_message)
+#         print(accepted_request)
+#     else:
+#         print("Ride cannot be accepted because no driver was found.")
+
+# except IndexError:
+#     print("No riders found.")
+
+
+if __name__ == "__main__":
+    uc = UserController()
