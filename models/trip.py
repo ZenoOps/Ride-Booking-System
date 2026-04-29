@@ -1,14 +1,14 @@
-from models.rider import Rider
-from models.driver import Driver
 from models.car import Car
 from utils.uuid_generators import UuidGenerator
+from models.rider import Rider
+from models.driver import Driver
 
 class Trip:
-    def __init__(self, driver, rider, car, start_point, destination, trip_id = None, status = None):
-        self.__trip_id = trip_id or UuidGenerator.generate_trip_uuid()
-        self.__driver = driver
-        self.__rider = rider
-        self.__car = car
+    def __init__(self, driver_id: str, rider_id: str, plate_number: str, start_point: str, destination: str, trip_id: str = None, status: str = None):
+        self.__trip_id = str(trip_id) if trip_id else str(UuidGenerator.generate_trip_uuid())
+        self.__driver_id = driver_id
+        self.__rider_id = rider_id
+        self.__plate_number = plate_number
         self.__start_point = start_point
         self.__destination = destination
         self.__status = status or "In Process"
@@ -20,48 +20,35 @@ class Trip:
 
     @property
     def driver(self):
-        return self.__driver
-
-    @driver.setter
-    def driver(self, driver):
-        self.__driver = driver
+        return self.__driver_id
 
     @property
     def rider(self):
-        return self.__rider
-
-    @rider.setter
-    def rider(self, rider):
-        self.__rider = rider
+        return self.__rider_id
 
     @property
     def car(self):
-        return self.__car
-
-    @car.setter
-    def car(self, car):
-        self.__car = car
+        return self.__plate_number
 
     @property
     def start_point(self):
         return self.__start_point
 
-    @start_point.setter
-    def start_point(self, start_point):
-        self.__start_point = start_point
-
     @property
     def destination(self):
         return self.__destination
-
-    @destination.setter
-    def destination(self, destination):
-        self.__destination = destination
 
     @property
     def status(self):
         return self.__status
 
-    @status.setter
-    def status(self, status):
-        self.__status = status
+    def to_dict(self):
+        return {
+            "trip_id": self.__trip_id,
+            "rider_id": self.__rider_id,
+            "driver_id": self.__driver_id,
+            "plate_number": self.__plate_number,
+            "start_point": self.__start_point,
+            "destination": self.__destination,
+            "status": self.__status
+        }

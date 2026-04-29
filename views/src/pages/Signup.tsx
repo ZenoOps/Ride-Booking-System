@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
-import { getUsers, saveUsers, setSession, uid, UserType } from "@/lib/storage";
+import { setSession, User, UserType } from "@/lib/storage";
+import { api } from "@/lib/api";
 
 const Signup = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const Signup = () => {
   const [plateNumber, setPlateNumber] = useState("");
   const [carModel, setCarModel] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !password.trim()) {
       toast.error("Please fill in all fields");
@@ -26,22 +27,27 @@ const Signup = () => {
       toast.error("Drivers must provide plate number and car model");
       return;
     }
-    const users = getUsers();
-    if (users.some((u) => u.name.toLowerCase() === name.trim().toLowerCase())) {
-      toast.error("That name is already taken");
-      return;
+
+    try {
+      const res = await api.signUp(
+        type,
+        name.trim(),
+        password,
+        type === "driver" ? plateNumber.trim() : undefined,
+        type === "driver" ? carModel.trim() : undefined,
+      );
+      const user: User = {
+        id: res.user.user_id,
+        name: res.user.username,
+        type,
+        ...(type === "driver" ? { plateNumber: plateNumber.trim(), carModel: carModel.trim() } : {}),
+      };
+      setSession(user);
+      toast.success(`Welcome, ${user.name}!`);
+      navigate(type === "rider" ? "/rider" : "/driver");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Signup failed");
     }
-    const user = {
-      id: uid(),
-      name: name.trim(),
-      password,
-      type,
-      ...(type === "driver" ? { plateNumber: plateNumber.trim(), carModel: carModel.trim() } : {}),
-    };
-    saveUsers([...users, user]);
-    setSession(user);
-    toast.success(`Welcome, ${user.name}!`);
-    navigate(type === "rider" ? "/rider" : "/driver");
   };
 
   return (

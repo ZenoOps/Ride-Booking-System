@@ -4,56 +4,117 @@ import { Layout } from "@/components/Layout";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Booking, getBookings, getSession, saveBookings } from "@/lib/storage";
+import { Booking, getSession } from "@/lib/storage";
+import { api, ApiTrip } from "@/lib/api";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Car, MapPin, User as UserIcon } from "lucide-react";
 
 const Driver = () => {
   const user = getSession();
   const [pending, setPending] = useState<Booking[]>([]);
   const [mine, setMine] = useState<Booking[]>([]);
+  const [currentLocation, setCurrentLocation] = useState<string>("");
+  const [newLocation, setNewLocation] = useState<string>("");
 
-  const refresh = () => {
+  const mapConfirmed = (t: ApiTrip): Booking => ({
+    id: t.trip_id,
+    riderId: t.rider_id,
+    riderName: t.rider_name ?? "",
+    driverId: t.driver_id,
+    driverName: user?.name,
+    driverPlate: t.plate_number,
+    driverCar: t.car_model ?? user?.carModel,
+    pickup: t.start_point,
+    dropoff: t.destination,
+    status: t.status === "Completed" ? "completed" : "assigned",
+    createdAt: 0,
+  });
+
+  const refresh = async () => {
     if (!user) return;
-    const all = getBookings();
-    setPending(all.filter((b) => b.status === "pending").sort((a, b) => a.createdAt - b.createdAt));
-    setMine(
-      all
-        .filter((b) => b.driverId === user.id)
-        .sort((a, b) => b.createdAt - a.createdAt),
-    );
+    try {
+      const [pendingRes, historyRes] = await Promise.all([
+        api.getDriverPendingTrips(user.id),
+        api.getTripsByUser(user.id, "driver"),
+      ]);
+
+      setPending(
+        pendingRes.trips.map((t) => ({
+          id: t.trip_id,
+          riderId: t.rider_id,
+          riderName: t.rider_name ?? "",
+          driverId: t.driver_id,
+          pickup: t.start_point,
+          dropoff: t.destination,
+          status: "pending" as const,
+          createdAt: 0,
+        })),
+      );
+
+      setMine(historyRes.trips.map(mapConfirmed).reverse());
+    } catch {
+      // network error — keep previous state
+    }
   };
 
   useEffect(() => {
-    refresh();
-    const i = setInterval(refresh, 1500);
-    return () => clearInterval(i);
+    if (!user) return;
+    api.getDriver(user.id).then((res) => {
+      setCurrentLocation(res.user.current_location);
+      setNewLocation(res.user.current_location);
+    }).catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const activeMine = mine.find((b) => b.status === "assigned");
+
+  useEffect(() => {
+    refresh();
+    if (activeMine) return;
+    const i = setInterval(refresh, 15000);
+    return () => clearInterval(i);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [!!activeMine]);
+
+  const handleLocationUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newLocation.trim() || !user) return;
+    try {
+      const res = await api.updateDriverLocation(user.id, newLocation.trim());
+      setCurrentLocation(res.driver.current_location);
+      setNewLocation(res.driver.current_location);
+      toast.success("Location updated!");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to update location");
+    }
+  };
 
   if (!user) return <Navigate to="/login" replace />;
   if (user.type !== "driver") return <Navigate to="/rider" replace />;
 
-  const activeMine = mine.find((b) => b.status === "assigned" || b.status === "started");
-
-  const update = (id: string, patch: Partial<Booking>) => {
-    const all = getBookings().map((b) => (b.id === id ? { ...b, ...patch } : b));
-    saveBookings(all);
-    refresh();
+  const completeTrip = async (id: string) => {
+    try {
+      await api.endTrip(id);
+      toast.success("Trip completed!");
+      refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to complete trip");
+    }
   };
 
-  const accept = (b: Booking) => {
+  const accept = async (b: Booking) => {
     if (activeMine) {
       toast.error("Finish your current trip first");
       return;
     }
-    update(b.id, {
-      status: "assigned",
-      driverId: user.id,
-      driverName: user.name,
-      driverPlate: user.plateNumber,
-      driverCar: user.carModel,
-    });
-    toast.success(`Booking accepted from ${b.riderName}`);
+    try {
+      await api.respondToRide(b.id, "accept");
+      toast.success(`Booking accepted from ${b.riderName || "rider"}`);
+      refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to accept ride");
+    }
   };
 
   return (
@@ -69,6 +130,25 @@ const Driver = () => {
             </div>
           </div>
 
+          <div className="rounded-2xl bg-card p-6 shadow-card border border-border/60">
+            <h2 className="text-xl font-bold mb-1">Current location</h2>
+            <p className="text-sm text-muted-foreground mb-4">Riders at this location will be matched to you.</p>
+            <form onSubmit={handleLocationUpdate} className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="location">Location</Label>
+                <Input
+                  id="location"
+                  value={newLocation}
+                  onChange={(e) => setNewLocation(e.target.value)}
+                  placeholder={currentLocation || "e.g. Bang Sue"}
+                />
+              </div>
+              <Button type="submit" variant="outline" className="w-full" size="sm">
+                Update location
+              </Button>
+            </form>
+          </div>
+
           {activeMine && (
             <div className="rounded-2xl bg-card p-6 shadow-card border border-border/60">
               <div className="flex items-center justify-between mb-3">
@@ -80,15 +160,9 @@ const Driver = () => {
                 <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-primary" /> {activeMine.pickup} → {activeMine.dropoff}</p>
                 {activeMine.notes && <p className="text-muted-foreground">Notes: {activeMine.notes}</p>}
               </div>
-              {activeMine.status === "assigned" ? (
-                <Button variant="hero" className="w-full" onClick={() => update(activeMine.id, { status: "started" })}>
-                  Start trip
-                </Button>
-              ) : (
-                <Button variant="success" className="w-full" onClick={() => update(activeMine.id, { status: "completed" })}>
-                  Complete trip
-                </Button>
-              )}
+              <Button variant="success" className="w-full" onClick={() => completeTrip(activeMine.id)}>
+                Complete trip
+              </Button>
             </div>
           )}
         </section>
@@ -130,7 +204,7 @@ const Driver = () => {
                       <p className="font-medium">{b.pickup} → {b.dropoff}</p>
                       <StatusBadge status={b.status} />
                     </div>
-                    <p className="text-xs text-muted-foreground">{b.riderName} · {new Date(b.createdAt).toLocaleString()}</p>
+                    <p className="text-xs text-muted-foreground">Rider : {b.riderName}</p>
                   </li>
                 ))}
               </ul>

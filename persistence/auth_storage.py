@@ -42,7 +42,7 @@ class AuthStorage:
                         "user_id": parts[0],
                         "username": parts[1],
                         "hashed_password": parts[2],
-                        "user_type": parts[3],
+                        "user_type": user_type,
                     }
                     records.append(record)
             return records
@@ -63,9 +63,9 @@ class AuthStorage:
             user_type = user.user_type
             if user_type == "driver":
                 with open(self.driver_path, 'a', encoding='utf-8') as f:
-                    f.write(f"{user.user_id}, {user.name}, {hashed_password}, {user.user_type}, {user.available_status}, {user.current_location}, {user.plate_number}\n")
+                    f.write(f"{user.user_id}, {user.name}, {hashed_password}, {user.available_status}, {user.current_location}, {user.plate_number}\n")
             elif user_type == "rider":
                 with open(self.rider_path, 'a', encoding='utf-8') as f:
-                    f.write(f"{user.user_id}, {user.name}, {hashed_password}, {user.user_type}\n")
+                    f.write(f"{user.user_id}, {user.name}, {hashed_password}\n")
         except (OSError, IOError) as e:
             raise FileHandlingException(f"Error writing auth file: {e}")

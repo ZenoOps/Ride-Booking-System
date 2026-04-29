@@ -7,15 +7,23 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import {
-  Booking,
-  getBookings,
-  getSession,
-  getUsers,
-  saveBookings,
-  uid,
-} from "@/lib/storage";
+import { Booking, getSession, getPendingTrip, setPendingTrip } from "@/lib/storage";
+import { api, ApiTrip } from "@/lib/api";
 import { Car, MapPin } from "lucide-react";
+
+const mapApiTrip = (t: ApiTrip, riderName: string): Booking => ({
+  id: t.trip_id,
+  riderId: t.rider_id,
+  riderName,
+  driverId: t.driver_id,
+  driverName: t.driver_name,
+  driverPlate: t.plate_number,
+  driverCar: t.car_model,
+  pickup: t.start_point,
+  dropoff: t.destination,
+  status: t.status === "Completed" ? "completed" : "assigned",
+  createdAt: 0,
+});
 
 const Rider = () => {
   const user = getSession();
@@ -23,29 +31,63 @@ const Rider = () => {
   const [dropoff, setDropoff] = useState("");
   const [notes, setNotes] = useState("");
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [pendingTrip, setPendingTripState] = useState<Booking | null>(() => {
+    const stored = getPendingTrip();
+    if (stored && stored.riderId !== user?.id) {
+      setPendingTrip(null);
+      return null;
+    }
+    return stored;
+  });
 
-  const refresh = () => {
+  const refresh = async () => {
     if (!user) return;
-    setBookings(
-      getBookings()
-        .filter((b) => b.riderId === user.id)
-        .sort((a, b) => b.createdAt - a.createdAt),
-    );
+    try {
+      const { trips } = await api.getTripsByUser(user.id, "rider");
+      const mapped = trips.map((t) => mapApiTrip(t, user.name));
+      setBookings(mapped.reverse());
+
+      // If the pending temp trip was accepted, it now appears in confirmed trips
+      const current = getPendingTrip();
+      if (current && mapped.find((b) => b.id === current.id)) {
+        setPendingTrip(null);
+        setPendingTripState(null);
+      }
+    } catch {
+      // network error — keep previous state
+    }
   };
+
+  const active = pendingTrip ?? bookings.find((b) => b.status !== "completed");
 
   useEffect(() => {
     refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (active?.status !== "pending") return;
     const i = setInterval(refresh, 1500);
     return () => clearInterval(i);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [active?.id, active?.status]);
 
   if (!user) return <Navigate to="/login" replace />;
   if (user.type !== "rider") return <Navigate to="/driver" replace />;
 
-  const active = bookings.find((b) => b.status !== "completed");
+  const handleCancel = async () => {
+    if (!pendingTrip || !user) return;
+    try {
+      await api.cancelRide(pendingTrip.id, user.id);
+      setPendingTrip(null);
+      setPendingTripState(null);
+      toast.success("Booking cancelled.");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Cancel failed");
+    }
+  };
 
-  const handleBook = (e: React.FormEvent) => {
+  const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pickup.trim() || !dropoff.trim()) {
       toast.error("Pickup and drop-off are required");
@@ -55,34 +97,27 @@ const Rider = () => {
       toast.error("You already have an active booking");
       return;
     }
-    const all = getBookings();
-    // Auto-assign first available driver (no active trip)
-    const drivers = getUsers().filter((u) => u.type === "driver");
-    const busy = new Set(
-      all.filter((b) => b.status === "assigned" || b.status === "started").map((b) => b.driverId),
-    );
-    const driver = drivers.find((d) => !busy.has(d.id));
-
-    const booking: Booking = {
-      id: uid(),
-      riderId: user.id,
-      riderName: user.name,
-      pickup: pickup.trim(),
-      dropoff: dropoff.trim(),
-      notes: notes.trim() || undefined,
-      status: driver ? "assigned" : "pending",
-      driverId: driver?.id,
-      driverName: driver?.name,
-      driverPlate: driver?.plateNumber,
-      driverCar: driver?.carModel,
-      createdAt: Date.now(),
-    };
-    saveBookings([booking, ...all]);
-    toast.success(driver ? `Driver ${driver.name} assigned!` : "Booking created — waiting for a driver");
-    setPickup("");
-    setDropoff("");
-    setNotes("");
-    refresh();
+    try {
+      const { trip } = await api.requestRide(user.id, pickup.trim(), dropoff.trim());
+      const pending: Booking = {
+        id: trip.trip_id,
+        riderId: trip.rider_id,
+        riderName: user.name,
+        driverId: trip.driver_id,
+        pickup: trip.start_point,
+        dropoff: trip.destination,
+        status: "pending",
+        createdAt: Date.now(),
+      };
+      setPendingTrip(pending);
+      setPendingTripState(pending);
+      toast.success("Ride requested! Waiting for driver to accept…");
+      setPickup("");
+      setDropoff("");
+      setNotes("");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Booking failed");
+    }
   };
 
   return (
@@ -125,9 +160,14 @@ const Rider = () => {
                     {active.driverName} · {active.driverCar} · <span className="font-mono">{active.driverPlate}</span>
                   </p>
                 ) : (
-                  <p className="text-muted-foreground">Waiting for a driver to be assigned…</p>
+                  <p className="text-muted-foreground">Driver is on the way</p>
                 )}
               </div>
+              {active.status === "pending" && (
+                <Button variant="destructive" size="sm" className="mt-4 w-full" onClick={handleCancel}>
+                  Cancel booking
+                </Button>
+              )}
             </div>
           )}
         </section>
@@ -146,7 +186,7 @@ const Rider = () => {
                       <StatusBadge status={b.status} />
                     </div>
                     <div className="text-xs text-muted-foreground space-y-1">
-                      <p>{new Date(b.createdAt).toLocaleString()}</p>
+                      <p>{b.createdAt ? new Date(b.createdAt).toLocaleString() : ""}</p>
                       {b.driverName && (
                         <p>Driver: {b.driverName} · {b.driverCar} · <span className="font-mono">{b.driverPlate}</span></p>
                       )}

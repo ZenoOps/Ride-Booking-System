@@ -1,3 +1,4 @@
+from fastapi import HTTPException
 from persistence.auth_storage import AuthStorage, hash_password, verify_password
 from models.session import Session
 from models.driver import Driver
@@ -16,9 +17,9 @@ class AuthController:
 
     def sign_up(self, username: str, password: str, user_type: str, plate_number = None, car_model = None ) -> Session:
         if user_type not in VALID_USER_TYPES:
-            raise InvalidInputException(f"Invalid user type: {user_type}")
+            raise HTTPException(400, f"Invalid user type: {user_type}")
         if self.__storage.username_exists(username, user_type):
-            raise DuplicateUserException(f"Username {username} is already taken")
+            raise HTTPException(400, "Username already exists")
 
         user_id = str(UuidGenerator.generate_trip_uuid())
         if user_type == "driver":
@@ -32,10 +33,10 @@ class AuthController:
 
     def sign_in(self, username: str, password: str, user_type: str) -> Session:
         if user_type not in VALID_USER_TYPES:
-            raise InvalidInputException(f"Invalid user type: {user_type}")
+            raise HTTPException(400, f"Invalid user type: {user_type}")
         record = self.__storage.find_by_username(username, user_type)
         if record is None or not verify_password(password, record['hashed_password']):
-            raise InvalidCredentialsException("Invalid username or password")
+            raise HTTPException(400, "Invalid username or password")
         self.__session.login(record['user_id'], record['username'], record['user_type'])
         return self.__session
 
@@ -44,7 +45,3 @@ class AuthController:
 
     def get_session(self) -> Session:
         return self.__session
-
-# auth_controller = AuthController()
-# auth_controller.sign_up("hhht", "pass123", "driver", plate_number="ABC2345", car_model="Toyota Corolla")
-# print(auth_controller.get_session().user_id)

@@ -25,6 +25,14 @@ class Session:
         self._username = username
         self._user_type = user_type
 
+    def to_dict(self) -> dict:
+        return {
+            "user_id": self._user_id,
+            "username": self._username,
+            "user_type": self._user_type,
+            "is_authenticated": self.is_authenticated
+        }
+
     def logout(self) -> None:
         self._user_id = None
         self._username = None

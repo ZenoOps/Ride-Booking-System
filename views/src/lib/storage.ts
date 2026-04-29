@@ -3,7 +3,6 @@ export type UserType = "rider" | "driver";
 export interface User {
   id: string;
   name: string;
-  password: string;
   type: UserType;
   plateNumber?: string;
   carModel?: string;
@@ -26,9 +25,8 @@ export interface Booking {
   createdAt: number;
 }
 
-const USERS_KEY = "rh_users";
-const BOOKINGS_KEY = "rh_bookings";
 const SESSION_KEY = "rh_session";
+const PENDING_TRIP_KEY = "rh_pending_trip";
 
 const read = <T,>(k: string, fallback: T): T => {
   try {
@@ -40,24 +38,14 @@ const read = <T,>(k: string, fallback: T): T => {
 };
 const write = (k: string, v: unknown) => localStorage.setItem(k, JSON.stringify(v));
 
-export const getUsers = () => read<User[]>(USERS_KEY, []);
-export const saveUsers = (u: User[]) => write(USERS_KEY, u);
-
-export const getBookings = () => read<Booking[]>(BOOKINGS_KEY, []);
-export const saveBookings = (b: Booking[]) => write(BOOKINGS_KEY, b);
-
 export const getSession = (): User | null => read<User | null>(SESSION_KEY, null);
 export const setSession = (u: User | null) => {
   if (u) write(SESSION_KEY, u);
   else localStorage.removeItem(SESSION_KEY);
 };
 
-export const uid = () => Math.random().toString(36).slice(2, 10);
-
-export const refreshSession = (): User | null => {
-  const s = getSession();
-  if (!s) return null;
-  const fresh = getUsers().find((u) => u.id === s.id) || null;
-  if (fresh) setSession(fresh);
-  return fresh;
+export const getPendingTrip = (): Booking | null => read<Booking | null>(PENDING_TRIP_KEY, null);
+export const setPendingTrip = (b: Booking | null) => {
+  if (b) write(PENDING_TRIP_KEY, b);
+  else localStorage.removeItem(PENDING_TRIP_KEY);
 };
