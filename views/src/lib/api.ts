@@ -1,7 +1,7 @@
-const BASE = "http://localhost:8000/api";
+const BASE = import.meta.env.VITE_API_BASE_URL ?? "/api";
 
 async function req<T>(method: string, path: string, params: Record<string, string> = {}): Promise<T> {
-  const url = new URL(BASE + path);
+  const url = new URL(BASE + path, window.location.origin);
   Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
   const res = await fetch(url.toString(), { method });
   if (!res.ok) {
