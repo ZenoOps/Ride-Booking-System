@@ -69,8 +69,8 @@ class UserStorage:
                         continue
                     data = line.strip().split(", ")
                     if data[0] == user_id:
-                        available_status = available_status if available_status else data[3]
-                        current_location = current_location if current_location else data[4]
+                        available_status = available_status if available_status is not None else data[3]
+                        current_location = current_location if current_location is not None else data[4]
                         f.write(f"{data[0]}, {data[1]}, {data[2]}, {available_status}, {current_location}, {data[5]}\n")
                         found = True
                         result = Driver(user_id=data[0], name=data[1], available_status=available_status, current_location=current_location, plate_number=data[5]).to_dict()

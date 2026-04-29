@@ -28,8 +28,9 @@ class AuthController:
         else:
             user = Rider(user_id=user_id, name=username)
         self.__storage.create_user(user, hash_password(password))
-        self.__session.login(user.user_id, user.name, user.user_type)
-        return self.__session
+        session = Session()
+        session.login(user.user_id, user.name, user.user_type)
+        return session
 
     def sign_in(self, username: str, password: str, user_type: str) -> Session:
         if user_type not in VALID_USER_TYPES:
@@ -37,8 +38,9 @@ class AuthController:
         record = self.__storage.find_by_username(username, user_type)
         if record is None or not verify_password(password, record['hashed_password']):
             raise HTTPException(400, "Invalid username or password")
-        self.__session.login(record['user_id'], record['username'], record['user_type'])
-        return self.__session
+        session = Session()
+        session.login(record['user_id'], record['username'], record['user_type'])
+        return session
 
     def sign_out(self) -> None:
         self.__session.logout()

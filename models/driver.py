@@ -3,7 +3,7 @@ from models.user import User
 class Driver(User):
     def __init__(self, user_id, name, password = None, available_status=None, current_location=None, plate_number=None):
         super().__init__(user_id, name, password)
-        self.__available_status = available_status or True
+        self.__available_status = available_status if available_status is not None else True
         self.__current_location = current_location.strip() if current_location else "Bang Sue"
         self.__plate_number = plate_number
         self.user_type = "driver"

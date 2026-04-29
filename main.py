@@ -11,7 +11,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:8080"],
+    allow_origins=["http://localhost:5173", "http://localhost:8080", "http://localhost:8081"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"]
@@ -101,10 +101,8 @@ def get_user(user_id: str, user_type: str):
 
 @app.post(base_api + "/{user_type}")
 def create_user(user_type: str, name: str, password: str, plate_number: str = None, car_model: str = None):
-    res, msg = auth_controller.sign_up(name, password, user_type, plate_number, car_model)
-    if res is None:
-        raise HTTPException(status_code=400, detail=msg)
-    return {"user": res.to_dict()}
+    session = auth_controller.sign_up(name, password, user_type, plate_number, car_model)
+    return {"user": session.to_dict()}
 
 @app.post(base_api + "/{user_type}/signin")
 def sign_in(user_type: str, name: str, password: str):

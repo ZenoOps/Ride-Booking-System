@@ -107,11 +107,14 @@ class TripController:
         if user_type not in valid_user_type:
             raise ValueError("Invalid user type")
         trips = self.__trip_storage.get_all_trip(user_id, user_type)
+        if not trips:
+            return trips
+        riders = {r["user_id"]: r["name"] for r in self.__user_storage.load_riders()}
+        drivers = {d["user_id"]: d["name"] for d in self.__user_storage.load_drivers()}
         for trip in trips:
-            trip["driver_name"] = self.__get_driver_name(trip["driver_id"])
+            trip["driver_name"] = drivers.get(trip["driver_id"], "Unknown driver")
             trip["car_model"] = self.__get_car_model(trip["plate_number"])
-            rider, _ = self.__user_controller.get_user_detail(trip["rider_id"], "rider")
-            trip["rider_name"] = rider["name"] if rider else "Unknown"
+            trip["rider_name"] = riders.get(trip["rider_id"], "Unknown")
         return trips
 
     def request_ride(self, rider_id: str, start_point: str, destination: str):
