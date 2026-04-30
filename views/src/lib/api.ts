@@ -62,6 +62,9 @@ export const api = {
       destination,
     }),
 
+  getTempTrip: (tripId: string) =>
+    req<{ trip: ApiTrip }>("GET", `/temp-trip/${tripId}`),
+
   respondToRide: (tripId: string, action: "accept" | "reject") =>
     req<{ trip: ApiTrip }>("PUT", `/respond-ride/${tripId}`, { action }),
 

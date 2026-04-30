@@ -110,10 +110,20 @@ const Driver = () => {
     }
     try {
       await api.respondToRide(b.id, "accept");
-      toast.success(`Booking accepted from ${b.riderName || "rider"}`);
+      toast.success(`Booking accepted from ${b.riderName || "driver"}`);
       refresh();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to accept ride");
+    }
+  };
+
+  const reject = async (b: Booking) => {
+    try {
+      await api.respondToRide(b.id, "reject");
+      toast.success(`Booking rejected from ${b.riderName || "driver"}`);
+      refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Failed to reject ride");
     }
   };
 
@@ -181,9 +191,14 @@ const Driver = () => {
                         <p className="font-medium">{b.pickup} → {b.dropoff}</p>
                         <p className="text-xs text-muted-foreground">Rider: {b.riderName}</p>
                       </div>
-                      <Button size="sm" variant="hero" onClick={() => accept(b)} disabled={!!activeMine}>
-                        Accept
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="hero" onClick={() => accept(b)} disabled={!!activeMine}>
+                          Accept
+                        </Button>
+                        <Button size="sm" variant="destructive" onClick={() => reject(b)}>
+                          Reject
+                        </Button>
+                      </div>
                     </div>
                     {b.notes && <p className="text-xs text-muted-foreground">Notes: {b.notes}</p>}
                   </li>

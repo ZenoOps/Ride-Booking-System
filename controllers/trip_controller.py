@@ -31,10 +31,13 @@ class TripController:
             return None, "Ride request not found."
         if temp_trip["rider_id"] != rider_id:
             return None, "Unauthorized."
-        if temp_trip["status"] != "In Process":
-            return None, "Only pending rides can be cancelled."
+        if temp_trip["status"] not in ["In Process", "rejected"]:
+            return None, "Only pending or rejected rides can be cancelled."
         self.__trip_storage.delete_temp_trip(trip_id)
         return temp_trip, "Ride cancelled."
+
+    def get_temp_trip_status(self, trip_id: str):
+        return self.__trip_storage.get_temp_trip(trip_id)
 
     def get_pending_trips_for_driver(self, driver_id: str) -> list:
         trips = self.__trip_storage.get_temp_trips_by_driver(driver_id)

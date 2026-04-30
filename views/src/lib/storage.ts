@@ -8,7 +8,7 @@ export interface User {
   carModel?: string;
 }
 
-export type TripStatus = "pending" | "assigned" | "started" | "completed";
+export type TripStatus = "pending" | "assigned" | "started" | "completed" | "rejected";
 
 export interface Booking {
   id: string;
