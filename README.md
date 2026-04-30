@@ -5,12 +5,25 @@ Dockerized full-stack ride booking application:
 - `frontend`: React/Vite app served by Nginx on container port `80`
 - `nginx` reverse proxy routes `/api/*` from frontend to backend
 
-## Docker Architecture
 
-- Multi-stage build in [Dockerfile](/home/zeno/Ride-Booking-System/Dockerfile)
-- Service orchestration in [docker-compose.yml](/home/zeno/Ride-Booking-System/docker-compose.yml)
-- Frontend routing/proxy config in [docker/nginx.conf](/home/zeno/Ride-Booking-System/docker/nginx.conf)
-- Persistent backend file storage via named volume `app-data` mounted at `/app/persistence/data`
+## Project Overview
+The Ride Booking System is a web-based application that connects riders with available drivers. It uses a Python FastAPI backend with file-based persistence and a React + TypeScript frontend. The system supports user registration, authentication, ride booking with automatic driver assignment, and trip lifecycle management.
+
+
+## Tech Stack
+- Backend: Python 3, FastAPI
+- Frontend: React 18, TypeScript, Vite, TailwindCSS
+- Storage: Plain text files (CSV format)
+- Auth: PBKDF2-SHA256 password hashing
+
+
+## Project Flow
+1. **Authentication**: Users (Riders or Drivers) start by registering or logging into the application.
+2. **Ride Request**: An authenticated Rider selects a pickup and drop-off location and requests a ride. The backend verifies the rider and finds an available driver.
+3. **Ride Assignment**: A temporary trip is created. The assigned Driver sees this pending ride on their dashboard.
+4. **Driver Response**: The Driver can choose to either accept or reject the booking. If accepted, the trip becomes an active ride. If rejected, the Rider is notified, and the temporary trip is canceled.
+5. **Ride Completion**: Once the trip is accepted and the ride is ongoing, the Driver has the ability to complete the trip from their dashboard, ending the lifecycle of the ride booking process.
+
 
 ## System Architecture
 
@@ -164,6 +177,13 @@ classDiagram
     Driver ..> City : current_location
     Session ..> User : user_id
 ```
+
+## Docker Architecture
+
+- Multi-stage build in [Dockerfile](/home/zeno/Ride-Booking-System/Dockerfile)
+- Service orchestration in [docker-compose.yml](/home/zeno/Ride-Booking-System/docker-compose.yml)
+- Frontend routing/proxy config in [docker/nginx.conf](/home/zeno/Ride-Booking-System/docker/nginx.conf)
+- Persistent backend file storage via named volume `app-data` mounted at `/app/persistence/data`
 
 ## Prerequisites
 
