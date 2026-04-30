@@ -52,6 +52,20 @@ const Rider = () => {
       if (current && mapped.find((b) => b.id === current.id)) {
         setPendingTrip(null);
         setPendingTripState(null);
+      } else if (current) {
+        // Check temp trip status for rejection
+        try {
+          const { trip } = await api.getTempTrip(current.id);
+          if (trip && trip.status === "rejected") {
+            toast.error("Driver rejected the ride request.");
+            setPendingTrip(null);
+            setPendingTripState(null);
+            // Optionally, delete the temp trip on the backend to clean it up
+            await api.cancelRide(current.id, user.id).catch(() => {});
+          }
+        } catch {
+          // Ignore 404 or errors
+        }
       }
     } catch {
       // network error — keep previous state
@@ -160,7 +174,7 @@ const Rider = () => {
                     {active.driverName} · {active.driverCar} · <span className="font-mono">{active.driverPlate}</span>
                   </p>
                 ) : (
-                  <p className="text-muted-foreground">Driver is on the way</p>
+                  <p className="text-muted-foreground">Waiting for driver to accept...</p>
                 )}
               </div>
               {active.status === "pending" && (

@@ -5,6 +5,7 @@ const styles: Record<TripStatus, string> = {
   assigned: "bg-secondary text-secondary-foreground",
   started: "bg-warning/15 text-warning",
   completed: "bg-success/15 text-success",
+  rejected: "bg-destructive/15 text-destructive",
 };
 
 const labels: Record<TripStatus, string> = {
@@ -12,6 +13,7 @@ const labels: Record<TripStatus, string> = {
   assigned: "Driver assigned",
   started: "Started",
   completed: "Completed",
+  rejected: "Rejected",
 };
 
 export const StatusBadge = ({ status }: { status: TripStatus }) => (

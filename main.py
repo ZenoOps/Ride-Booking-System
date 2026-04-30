@@ -45,6 +45,13 @@ def respond_to_ride(trip_id: str, action: str):
         raise HTTPException(status_code=400, detail=msg)
     return {"trip": result}
 
+@app.get(base_api + "/temp-trip/{trip_id}")
+def get_temp_trip_status(trip_id: str):
+    trip = trip_controller.get_temp_trip_status(trip_id)
+    if trip is None:
+        raise HTTPException(status_code=404, detail="Temp trip not found")
+    return {"trip": trip}
+
 @app.get(base_api + "/trip/user/{user_id}")
 def get_all_trips_by_user(user_id: str, user_type: str):
     try:
