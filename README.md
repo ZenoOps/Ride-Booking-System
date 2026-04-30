@@ -12,6 +12,70 @@ Dockerized full-stack ride booking application:
 - Frontend routing/proxy config in [docker/nginx.conf](/home/zeno/Ride-Booking-System/docker/nginx.conf)
 - Persistent backend file storage via named volume `app-data` mounted at `/app/persistence/data`
 
+## System Architecture
+
+```mermaid
+graph TD
+    subgraph Frontend["Frontend (React + Vite)"]
+        Pages["Pages: Login, Signup, Rider, Driver"]
+        Lib["Lib: api.ts, storage.ts"]
+    end
+
+    subgraph API["FastAPI (main.py)"]
+        Routes["Routes: auth, user, driver, trip"]
+    end
+
+    subgraph Controllers["Controller Layer"]
+        AC["AuthController"]
+        UC["UserController"]
+        TC["TripController"]
+    end
+
+    subgraph Persistence["Persistence Layer"]
+        AS["AuthStorage"]
+        US["UserStorage"]
+        TS["TripStorage"]
+        CS["CarStorage"]
+    end
+
+    subgraph Storage["File Storage (data/)"]
+        Files["rider.txt · driver.txt · car.txt · trip.txt · temp_trip.txt"]
+    end
+
+    Frontend -->|HTTP REST| API
+    Routes --> AC
+    Routes --> UC
+    Routes --> TC
+    AC --> AS
+    AC --> CS
+    UC --> US
+    UC --> CS
+    TC --> TS
+    TC --> US
+    Controllers --> Persistence
+    Persistence --> Storage
+```
+
+## Trip Status Flow
+
+```mermaid
+flowchart TD
+    A["Rider requests ride"] --> B["temp_trip created\nstatus: In Process"]
+    B --> C{"Driver response"}
+    C -->|Accept| D["temp_trip: accepted\ntrip created: In Process"]
+    C -->|Reject| E["temp_trip: rejected\nRider notified"]
+    D --> F{"Driver action"}
+    F -->|Complete| G["trip: Completed\nAppears in history"]
+    E --> H["Rider can book again"]
+
+    style A fill:#4f46e5,color:#fff
+    style B fill:#f59e0b,color:#000
+    style D fill:#22c55e,color:#fff
+    style E fill:#ef4444,color:#fff
+    style G fill:#06b6d4,color:#fff
+    style H fill:#8b5cf6,color:#fff
+```
+
 ## UML Class Diagram
 
 ```mermaid
