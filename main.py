@@ -74,12 +74,23 @@ def end_trip(trip_id: str):
         raise HTTPException(status_code=400, detail="Trip not found")
     return {"trip": res}
 
+@app.post(base_api + "/trip/{trip_id}/rating")
+def rate_driver(trip_id: str, rider_id: str, rating: int):
+    result, msg = trip_controller.rate_driver(trip_id, rider_id, rating)
+    if result is None:
+        raise HTTPException(status_code=400, detail=msg)
+    return {"rating": result, "message": msg}
+
 
 # Driver-specific Routes
 @app.get(base_api + "/driver/{driver_id}/pending-trips")
 def get_driver_pending_trips(driver_id: str):
     trips = trip_controller.get_pending_trips_for_driver(driver_id)
     return {"trips": trips}
+
+@app.get(base_api + "/driver/{driver_id}/rating")
+def get_driver_rating(driver_id: str):
+    return {"rating": trip_controller.get_driver_rating_summary(driver_id)}
 
 @app.put(base_api + "/driver/{driver_id}/status")
 def update_driver_status(driver_id: str, new_status: str):

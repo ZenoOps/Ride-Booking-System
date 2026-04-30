@@ -8,7 +8,9 @@ import { Booking, getSession } from "@/lib/storage";
 import { api, ApiTrip } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Car, MapPin, User as UserIcon } from "lucide-react";
+import { Car, MapPin, Star, User as UserIcon } from "lucide-react";
+
+const ratingLabel = (count = 0) => `${count} ${count === 1 ? "rating" : "ratings"}`;
 
 const Driver = () => {
   const user = getSession();
@@ -16,6 +18,8 @@ const Driver = () => {
   const [mine, setMine] = useState<Booking[]>([]);
   const [currentLocation, setCurrentLocation] = useState<string>("");
   const [newLocation, setNewLocation] = useState<string>("");
+  const [averageRating, setAverageRating] = useState<number | null>(null);
+  const [ratingCount, setRatingCount] = useState<number>(0);
 
   const mapConfirmed = (t: ApiTrip): Booking => ({
     id: t.trip_id,
@@ -25,6 +29,9 @@ const Driver = () => {
     driverName: user?.name,
     driverPlate: t.plate_number,
     driverCar: t.car_model ?? user?.carModel,
+    driverRating: t.driver_rating,
+    driverAverageRating: t.driver_average_rating,
+    driverRatingCount: t.driver_rating_count,
     pickup: t.start_point,
     dropoff: t.destination,
     status: t.status === "Completed" ? "completed" : "assigned",
@@ -53,6 +60,11 @@ const Driver = () => {
       );
 
       setMine(historyRes.trips.map(mapConfirmed).reverse());
+      const rating = historyRes.trips.find((t) => t.driver_average_rating !== undefined);
+      if (rating) {
+        setAverageRating(rating.driver_average_rating ?? null);
+        setRatingCount(rating.driver_rating_count ?? 0);
+      }
     } catch {
       // network error — keep previous state
     }
@@ -63,6 +75,8 @@ const Driver = () => {
     api.getDriver(user.id).then((res) => {
       setCurrentLocation(res.user.current_location);
       setNewLocation(res.user.current_location);
+      setAverageRating(res.user.average_rating ?? null);
+      setRatingCount(res.user.rating_count ?? 0);
     }).catch(() => { });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -137,6 +151,18 @@ const Driver = () => {
             <div className="rounded-xl bg-secondary/60 p-4 space-y-1 text-sm">
               <p className="flex items-center gap-2"><Car className="h-4 w-4 text-primary" /> {user.carModel}</p>
               <p className="font-mono text-muted-foreground">{user.plateNumber}</p>
+              <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-warning/10 px-3 py-1.5 text-warning">
+                <Star className="h-4 w-4 fill-warning" />
+                {averageRating == null ? (
+                  <span className="font-medium">No ratings yet</span>
+                ) : (
+                  <>
+                    <span className="font-semibold">{averageRating.toFixed(1)}</span>
+                    <span className="text-muted-foreground">out of 5</span>
+                    <span className="text-muted-foreground">· {ratingLabel(ratingCount)}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
 
@@ -220,6 +246,14 @@ const Driver = () => {
                       <StatusBadge status={b.status} />
                     </div>
                     <p className="text-xs text-muted-foreground">Rider : {b.riderName}</p>
+                    {b.driverRating ? (
+                      <p className="mt-1 flex items-center gap-1 text-xs text-muted-foreground">
+                        <Star className="h-3.5 w-3.5 fill-warning text-warning" />
+                        Rider rating: {b.driverRating} out of 5
+                      </p>
+                    ) : (
+                      b.status === "completed" && <p className="mt-1 text-xs text-muted-foreground">No rating yet</p>
+                    )}
                   </li>
                 ))}
               </ul>

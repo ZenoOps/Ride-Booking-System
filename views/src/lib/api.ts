@@ -25,6 +25,8 @@ export interface ApiDriver {
   current_location: string;
   plate_number: string;
   car_model?: string;
+  average_rating?: number | null;
+  rating_count?: number;
 }
 
 export interface ApiTrip {
@@ -38,6 +40,21 @@ export interface ApiTrip {
   driver_name?: string;
   car_model?: string;
   rider_name?: string;
+  driver_rating?: number | null;
+  driver_average_rating?: number | null;
+  driver_rating_count?: number;
+}
+
+export interface ApiRating {
+  trip_id: string;
+  driver_id: string;
+  rider_id: string;
+  rating: number;
+}
+
+export interface ApiRatingSummary {
+  average_rating: number | null;
+  rating_count: number;
 }
 
 export const api = {
@@ -74,8 +91,17 @@ export const api = {
   endTrip: (tripId: string) =>
     req<{ trip: ApiTrip }>("PUT", `/trip/${tripId}`),
 
+  rateDriver: (tripId: string, riderId: string, rating: number) =>
+    req<{ rating: ApiRating; message: string }>("POST", `/trip/${tripId}/rating`, {
+      rider_id: riderId,
+      rating: String(rating),
+    }),
+
   getDriverPendingTrips: (driverId: string) =>
     req<{ trips: ApiTrip[] }>("GET", `/driver/${driverId}/pending-trips`),
+
+  getDriverRating: (driverId: string) =>
+    req<{ rating: ApiRatingSummary }>("GET", `/driver/${driverId}/rating`),
 
   updateDriverLocation: (driverId: string, newLocation: string) =>
     req<{ driver: ApiDriver }>("PUT", `/driver/${driverId}/location`, { new_location: newLocation }),

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Booking, getSession, getPendingTrip, setPendingTrip } from "@/lib/storage";
 import { api, ApiTrip } from "@/lib/api";
-import { Car, MapPin } from "lucide-react";
+import { Car, MapPin, Star } from "lucide-react";
 
 const mapApiTrip = (t: ApiTrip, riderName: string): Booking => ({
   id: t.trip_id,
@@ -19,11 +19,16 @@ const mapApiTrip = (t: ApiTrip, riderName: string): Booking => ({
   driverName: t.driver_name,
   driverPlate: t.plate_number,
   driverCar: t.car_model,
+  driverRating: t.driver_rating,
+  driverAverageRating: t.driver_average_rating,
+  driverRatingCount: t.driver_rating_count,
   pickup: t.start_point,
   dropoff: t.destination,
   status: t.status === "Completed" ? "completed" : "assigned",
   createdAt: 0,
 });
+
+const ratingLabel = (count = 0) => `${count} ${count === 1 ? "rating" : "ratings"}`;
 
 const Rider = () => {
   const user = getSession();
@@ -31,6 +36,7 @@ const Rider = () => {
   const [dropoff, setDropoff] = useState("");
   const [notes, setNotes] = useState("");
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [ratingDrafts, setRatingDrafts] = useState<Record<string, number>>({});
   const [pendingTrip, setPendingTripState] = useState<Booking | null>(() => {
     const stored = getPendingTrip();
     if (stored && stored.riderId !== user?.id) {
@@ -134,6 +140,26 @@ const Rider = () => {
     }
   };
 
+  const handleRateDriver = async (booking: Booking) => {
+    const rating = ratingDrafts[booking.id];
+    if (!rating || rating < 1 || rating > 5) {
+      toast.error("Choose a rating from 1 to 5.");
+      return;
+    }
+    try {
+      await api.rateDriver(booking.id, user.id, rating);
+      toast.success("Driver rating submitted.");
+      setRatingDrafts((current) => {
+        const next = { ...current };
+        delete next[booking.id];
+        return next;
+      });
+      refresh();
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Rating failed");
+    }
+  };
+
   return (
     <Layout>
       <div className="grid lg:grid-cols-5 gap-6">
@@ -204,8 +230,41 @@ const Rider = () => {
                       {b.driverName && (
                         <p>Driver: {b.driverName} · {b.driverCar} · <span className="font-mono">{b.driverPlate}</span></p>
                       )}
+                      {b.driverAverageRating != null && (
+                        <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-warning/10 px-3 py-1.5 text-warning">
+                          <Star className="h-4 w-4 fill-warning" />
+                          <span className="font-semibold">{b.driverAverageRating.toFixed(1)}</span>
+                          <span className="text-muted-foreground">out of 5</span>
+                          <span className="text-muted-foreground">· {ratingLabel(b.driverRatingCount ?? 0)}</span>
+                        </div>
+                      )}
+                      {b.driverRating && <p>Your rating: {b.driverRating} out of 5</p>}
                       {b.notes && <p>Notes: {b.notes}</p>}
                     </div>
+                    {b.status === "completed" && !b.driverRating && (
+                      <div className="mt-3 flex flex-col gap-2 border-t border-border/60 pt-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-1">
+                          {[1, 2, 3, 4, 5].map((value) => (
+                            <button
+                              key={value}
+                              type="button"
+                              className="rounded-md p-1 text-warning transition-colors hover:bg-warning/10"
+                              aria-label={`Rate ${value} star${value === 1 ? "" : "s"}`}
+                              onClick={() => setRatingDrafts((current) => ({ ...current, [b.id]: value }))}
+                            >
+                              <Star
+                                className={`h-5 w-5 ${
+                                  value <= (ratingDrafts[b.id] ?? 0) ? "fill-warning" : "fill-transparent"
+                                }`}
+                              />
+                            </button>
+                          ))}
+                        </div>
+                        <Button size="sm" variant="outline" onClick={() => handleRateDriver(b)}>
+                          Submit rating
+                        </Button>
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>

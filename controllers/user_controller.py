@@ -1,11 +1,13 @@
 from persistence.user_storage import UserStorage
 from persistence.car_storage import CarStorage
+from persistence.rating_storage import RatingStorage
 from utils.exceptions import InvalidInputException
 
 class UserController:
-    def __init__(self, user_storage=None, car_storage=None):
+    def __init__(self, user_storage=None, car_storage=None, rating_storage=None):
         self.__user_storage = user_storage or UserStorage()
         self.__car_storage = car_storage or CarStorage()
+        self.__rating_storage = rating_storage or RatingStorage()
         self.__valid_user_types = ["rider", "driver"]
 
     def get_user_detail(self, user_id: str, user_type: str):
@@ -24,7 +26,10 @@ class UserController:
             for driver in drivers:
                 if driver["user_id"] == target_id:
                     car_model = self.__car_storage.get_car_model(driver["plate_number"])
+                    rating_summary = self.__rating_storage.get_driver_rating_summary(driver["user_id"])
                     driver["car_model"] = car_model
+                    driver["average_rating"] = rating_summary["average_rating"]
+                    driver["rating_count"] = rating_summary["rating_count"]
                     return driver, "Driver found"
         return None, f"{user_type.capitalize()} not found"
 

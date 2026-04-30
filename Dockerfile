@@ -18,7 +18,7 @@ COPY utils ./utils
 
 EXPOSE 8000
 
-CMD ["sh", "-c", "mkdir -p /app/persistence/data && touch /app/persistence/data/rider.txt /app/persistence/data/driver.txt /app/persistence/data/car.txt /app/persistence/data/trip.txt /app/persistence/data/temp_trip.txt && uvicorn main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "mkdir -p /app/persistence/data && touch /app/persistence/data/rider.txt /app/persistence/data/driver.txt /app/persistence/data/car.txt /app/persistence/data/trip.txt /app/persistence/data/temp_trip.txt /app/persistence/data/rating.txt && uvicorn main:app --host 0.0.0.0 --port 8000"]
 
 
 FROM node:20-alpine AS frontend-build

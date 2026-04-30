@@ -23,6 +23,7 @@ The Ride Booking System is a web-based application that connects riders with ava
 3. **Ride Assignment**: A temporary trip is created. The assigned Driver sees this pending ride on their dashboard.
 4. **Driver Response**: The Driver can choose to either accept or reject the booking. If accepted, the trip becomes an active ride. If rejected, the Rider is notified, and the temporary trip is canceled.
 5. **Ride Completion**: Once the trip is accepted and the ride is ongoing, the Driver has the ability to complete the trip from their dashboard, ending the lifecycle of the ride booking process.
+6. **Driver Rating**: After a trip is completed, the Rider can rate the Driver from 1 to 5. Drivers can see their average rating and per-trip ratings.
 
 
 ## System Architecture
@@ -49,10 +50,11 @@ graph TD
         US["UserStorage"]
         TS["TripStorage"]
         CS["CarStorage"]
+        RS["RatingStorage"]
     end
 
     subgraph Storage["File Storage (data/)"]
-        Files["rider.txt · driver.txt · car.txt · trip.txt · temp_trip.txt"]
+        Files["rider.txt · driver.txt · car.txt · trip.txt · temp_trip.txt · rating.txt"]
     end
 
     Frontend -->|HTTP REST| API
@@ -65,6 +67,7 @@ graph TD
     UC --> CS
     TC --> TS
     TC --> US
+    TC --> RS
     Controllers --> Persistence
     Persistence --> Storage
 ```
@@ -147,6 +150,18 @@ classDiagram
         +to_dict()
     }
 
+    class Rating {
+        -__trip_id
+        -__driver_id
+        -__rider_id
+        -__rating
+        +trip_id
+        +driver_id
+        +rider_id
+        +rating
+        +to_dict()
+    }
+
     class Session {
         -_user_id
         -_username
@@ -173,6 +188,9 @@ classDiagram
     Trip ..> Driver : driver_id
     Trip ..> Rider : rider_id
     Trip ..> Car : plate_number
+    Rating ..> Trip : trip_id
+    Rating ..> Driver : driver_id
+    Rating ..> Rider : rider_id
     Driver ..> Car : plate_number
     Driver ..> City : current_location
     Session ..> User : user_id
@@ -243,6 +261,7 @@ Backend creates and uses these files inside `/app/persistence/data`:
 - `car.txt`
 - `trip.txt`
 - `temp_trip.txt`
+- `rating.txt`
 
 These files are persisted in Docker volume `app-data`.
 

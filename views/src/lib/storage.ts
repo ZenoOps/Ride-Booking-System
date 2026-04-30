@@ -18,6 +18,9 @@ export interface Booking {
   driverName?: string;
   driverPlate?: string;
   driverCar?: string;
+  driverRating?: number | null;
+  driverAverageRating?: number | null;
+  driverRatingCount?: number;
   pickup: string;
   dropoff: string;
   notes?: string;

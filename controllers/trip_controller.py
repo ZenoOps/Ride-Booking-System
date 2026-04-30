@@ -1,5 +1,7 @@
 from persistence.trip_storage import TripStorage
 from models.trip import Trip
+from models.rating import Rating
+from persistence.rating_storage import RatingStorage
 from persistence.user_storage import UserStorage
 import os
 from controllers.user_controller import UserController
@@ -7,11 +9,12 @@ from controllers.user_controller import UserController
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 valid_user_type = ["rider", "driver"]
 class TripController:
-    def __init__(self, user_controller = None, user_storage = None, trip_storage = None):
+    def __init__(self, user_controller = None, user_storage = None, trip_storage = None, rating_storage = None):
         self.__validate_user_type = valid_user_type
         self.__user_controller = user_controller or UserController()
         self.__trip_storage = trip_storage or TripStorage()
         self.__user_storage = user_storage or UserStorage()
+        self.__rating_storage = rating_storage or RatingStorage()
 
     def start_trip(self, driver_id: str, rider_id: str, plate_number: str, start_point: str, destination: str) -> Trip:
         trip_obj = Trip(driver_id, rider_id, plate_number, start_point, destination)
@@ -38,6 +41,39 @@ class TripController:
 
     def get_temp_trip_status(self, trip_id: str):
         return self.__trip_storage.get_temp_trip(trip_id)
+
+    def get_driver_rating_summary(self, driver_id: str):
+        return self.__rating_storage.get_driver_rating_summary(driver_id)
+
+    def rate_driver(self, trip_id: str, rider_id: str, rating: int):
+        if not trip_id:
+            return None, "Trip ID cannot be empty."
+        if not rider_id:
+            return None, "Rider ID cannot be empty."
+        try:
+            rating_value = int(rating)
+        except (TypeError, ValueError):
+            return None, "Rating must be a number from 1 to 5."
+        if rating_value < 1 or rating_value > 5:
+            return None, "Rating must be between 1 and 5."
+
+        trip = self.__trip_storage.get_trip_by_id(trip_id)
+        if not trip:
+            return None, "Trip not found."
+        if trip["rider_id"] != rider_id:
+            return None, "Only the rider from this trip can rate the driver."
+        if trip["status"] != "Completed":
+            return None, "Only completed trips can be rated."
+        if self.__rating_storage.get_rating_by_trip_id(trip_id):
+            return None, "Trip already has a driver rating."
+
+        rating_obj = Rating(
+            trip_id=trip["trip_id"],
+            driver_id=trip["driver_id"],
+            rider_id=trip["rider_id"],
+            rating=rating_value,
+        )
+        return self.__rating_storage.create_rating(rating_obj), "Driver rated successfully."
 
     def get_pending_trips_for_driver(self, driver_id: str) -> list:
         trips = self.__trip_storage.get_temp_trips_by_driver(driver_id)
@@ -92,6 +128,8 @@ class TripController:
 
         driver_name = self.__get_driver_name(trip["driver_id"])
         car_model = self.__get_car_model(trip["plate_number"])
+        driver_rating = self.__rating_storage.get_rating_by_trip_id(trip["trip_id"])
+        rating_summary = self.__rating_storage.get_driver_rating_summary(trip["driver_id"])
 
         return {
             "success": True,
@@ -104,6 +142,9 @@ class TripController:
             "start_point": trip["start_point"],
             "destination": trip["destination"],
             "status": trip["status"],
+            "driver_rating": driver_rating["rating"] if driver_rating else None,
+            "driver_average_rating": rating_summary["average_rating"],
+            "driver_rating_count": rating_summary["rating_count"],
         }
 
     def get_trips_by_user(self, user_id: str, user_type: str) -> list:
@@ -118,6 +159,11 @@ class TripController:
             trip["driver_name"] = drivers.get(trip["driver_id"], "Unknown driver")
             trip["car_model"] = self.__get_car_model(trip["plate_number"])
             trip["rider_name"] = riders.get(trip["rider_id"], "Unknown")
+            driver_rating = self.__rating_storage.get_rating_by_trip_id(trip["trip_id"])
+            rating_summary = self.__rating_storage.get_driver_rating_summary(trip["driver_id"])
+            trip["driver_rating"] = driver_rating["rating"] if driver_rating else None
+            trip["driver_average_rating"] = rating_summary["average_rating"]
+            trip["driver_rating_count"] = rating_summary["rating_count"]
         return trips
 
     def request_ride(self, rider_id: str, start_point: str, destination: str):
