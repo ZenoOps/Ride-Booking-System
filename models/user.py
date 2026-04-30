@@ -1,23 +1,23 @@
 class User:
-    def __init__(self, user_id, name, type):
-        self.__user_id = user_id
-        self.__name = name
-        self.__type = type
+    def __init__(self, user_id, name, password):
+        self._user_id = user_id
+        self._name = name
+        self._password = password
 
-    # user_id
     @property
     def user_id(self):
-        return self.__user_id
+        return self._user_id
 
-    @user_id.setter
-    def user_id(self, new_user_id):
-        self.__user_id = new_user_id
-
-    # name
     @property
     def name(self):
-        return self.__name
+        return self._name
 
-    @name.setter
-    def name(self, name):
-        self.__name = name
+    @property
+    def password(self):
+        return self._password
+
+    def to_dict(self):
+        return {
+            "user_id": self._user_id,
+            "name": self._name
+        }

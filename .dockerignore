@@ -1,0 +1,14 @@
+.git
+.gitignore
+.mypy_cache
+.idea
+.codex
+__pycache__
+*.pyc
+.env
+persistence/data
+tests
+views/node_modules
+views/dist
+views/.vite
+views/coverage
