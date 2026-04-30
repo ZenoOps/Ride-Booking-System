@@ -30,15 +30,12 @@ class UserController:
 
     def find_available_driver(self, start_point=None):
         drivers = self.__user_storage.load_drivers()
-        # Prefer a driver whose location matches the pickup point
         for driver in drivers:
             if str(driver["available_status"]).lower() != "true":
                 continue
-            if start_point and driver["current_location"] == start_point:
-                return driver
-        # Fallback: any available driver regardless of location
-        for driver in drivers:
-            if str(driver["available_status"]).lower() == "true":
+            str_start_point = str(start_point).lower().replace(" ", "")
+            str_driver_location = str(driver["current_location"]).lower().replace(" ", "")
+            if str_start_point in str_driver_location or str_driver_location in str_start_point:
                 return driver
         return None
 

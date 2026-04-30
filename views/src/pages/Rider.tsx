@@ -160,7 +160,7 @@ const Rider = () => {
                     {active.driverName} · {active.driverCar} · <span className="font-mono">{active.driverPlate}</span>
                   </p>
                 ) : (
-                  <p className="text-muted-foreground">Driver is on the way</p>
+                  <p className="text-muted-foreground">Waiting for driver to accept...</p>
                 )}
               </div>
               {active.status === "pending" && (
