@@ -60,8 +60,6 @@ const Rider = () => {
             toast.error("Driver rejected the ride request.");
             setPendingTrip(null);
             setPendingTripState(null);
-            // Optionally, delete the temp trip on the backend to clean it up
-            await api.cancelRide(current.id, user.id).catch(() => {});
           }
         } catch {
           // Ignore 404 or errors

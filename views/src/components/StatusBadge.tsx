@@ -6,6 +6,7 @@ const styles: Record<TripStatus, string> = {
   started: "bg-warning/15 text-warning",
   completed: "bg-success/15 text-success",
   rejected: "bg-destructive/15 text-destructive",
+  cancelled: "bg-orange-500/15 text-orange-600",
 };
 
 const labels: Record<TripStatus, string> = {
@@ -14,6 +15,7 @@ const labels: Record<TripStatus, string> = {
   started: "Started",
   completed: "Completed",
   rejected: "Rejected",
+  cancelled: "Cancelled",
 };
 
 export const StatusBadge = ({ status }: { status: TripStatus }) => (
