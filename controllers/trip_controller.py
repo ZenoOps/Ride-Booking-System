@@ -36,7 +36,8 @@ class TripController:
             return None, "Unauthorized."
         if temp_trip["status"] not in ["In Process", "rejected"]:
             return None, "Only pending or rejected rides can be cancelled."
-        self.__trip_storage.delete_temp_trip(trip_id)
+        self.__trip_storage.edit_temp_trip(trip_id, "cancelled")
+        temp_trip["status"] = "cancelled"
         return temp_trip, "Ride cancelled."
 
     def get_temp_trip_status(self, trip_id: str):

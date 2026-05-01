@@ -124,7 +124,7 @@ const Driver = () => {
     }
     try {
       await api.respondToRide(b.id, "accept");
-      toast.success(`Booking accepted from ${b.riderName || "driver"}`);
+      toast.success(`Booking has been accepted.`);
       refresh();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to accept ride");
@@ -134,7 +134,7 @@ const Driver = () => {
   const reject = async (b: Booking) => {
     try {
       await api.respondToRide(b.id, "reject");
-      toast.success(`Booking rejected from ${b.riderName || "driver"}`);
+      toast.success(`Booking has been rejected.`);
       refresh();
     } catch (err: unknown) {
       toast.error(err instanceof Error ? err.message : "Failed to reject ride");
